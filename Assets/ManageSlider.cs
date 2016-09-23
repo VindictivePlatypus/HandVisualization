@@ -9,7 +9,7 @@ public class ManageSlider : MonoBehaviour {
 
     private Slider s;
 
-    void Start()
+    void Awake()
     {
         s = this.GetComponent<Slider>();
     }
