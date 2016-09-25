@@ -27,6 +27,7 @@ public class FillDropdown : MonoBehaviour {
     public void SendDirectory()
     {
         p.ChangeFolder(dataFolder + "\\" + dd.options[dd.value].text);
+        p.ChangeFolder(dataFolder + "\\" + dd.options[dd.value].text);
     }
 
 }
