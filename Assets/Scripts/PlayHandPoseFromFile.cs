@@ -164,9 +164,9 @@ public class PlayHandPoseFromFile : MonoBehaviour {
 
     public void SetPose()
     {
+        /*
         //Muthakuckin thumb
         parts[1].localRotation = new Quaternion(poses[idx][1 * 4 + 2], poses[idx][1 * 4 + 3], poses[idx][1 * 4 + 1], poses[idx][1 * 4]);
-        Quaternion q = Quaternion.AngleAxis(180f, new Vector3(1, 0, 0));
         parts[2].localRotation = new Quaternion(poses[idx][2 * 4 + 2], poses[idx][2 * 4 + 1], poses[idx][2 * 4 + 3], poses[idx][2 * 4]) * q;
         parts[3].localRotation = new Quaternion(poses[idx][3 * 4 + 1], poses[idx][3 * 4 + 2], poses[idx][3 * 4 + 3], poses[idx][3 * 4]);
 
@@ -174,10 +174,25 @@ public class PlayHandPoseFromFile : MonoBehaviour {
         {
             parts[i].localRotation = new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], -poses[idx][i * 4 + 3], poses[idx][i * 4]);
         }
-        q = Quaternion.AngleAxis(180f, new Vector3(0, 1, 0));
+        
         foreach (int i in indexDesJointsChiantsY)
         {
             parts[i].localRotation = new Quaternion(-poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]) * q;
+        }
+        */
+        //this is a test of another hand model
+        Quaternion q = Quaternion.AngleAxis(180f, new Vector3(0,0,1));
+        int i = 0;
+        //parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]))*q;
+        i = 1;
+        parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]))*q;
+        i = 2;
+        parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]));
+        i = 3;
+        parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], -poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]));
+        for (i =4; i < 16; i++)
+        {
+            parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], -poses[idx][i * 4 + 3], poses[idx][i * 4]));
         }
     }
 

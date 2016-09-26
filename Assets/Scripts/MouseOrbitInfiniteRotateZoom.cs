@@ -37,7 +37,7 @@ public class MouseOrbitInfiniteRotateZoom : MonoBehaviour
 
         x = angles.y;
 
-        y = angles.x;
+        y = angles.x - 90;
         
     }
     void LateUpdate()
