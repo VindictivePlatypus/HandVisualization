@@ -14,6 +14,7 @@ public class PlayHandPoseFromFile : MonoBehaviour {
     public Slider slide;
 
     public List<RawImage> pressImg;
+    public List<MeshRenderer> pressMesh;
     public Button playPauseButton;
 
     private string filePathPose, filePathPressure;
@@ -181,11 +182,17 @@ public class PlayHandPoseFromFile : MonoBehaviour {
         }
         */
         //this is a test of another hand model
-        Quaternion q = Quaternion.AngleAxis(180f, new Vector3(0,0,1));
+        Quaternion qx = Quaternion.AngleAxis(180f, new Vector3(1, 0, 0));
+        Quaternion qy = Quaternion.AngleAxis(180f, new Vector3(0, 1, 0));
+        Quaternion qz = Quaternion.AngleAxis(180f, new Vector3(0, 0, 1));
+        Quaternion qx90 = Quaternion.AngleAxis(-90f, new Vector3(1, 0, 0));
+        Quaternion qy90 = Quaternion.AngleAxis(-90f, new Vector3(0, 1, 0));
+        Quaternion qz90 = Quaternion.AngleAxis(90f, new Vector3(0, 0, 1));
         int i = 0;
-        //parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]))*q;
+        parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 0], poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3]))*qx90*qy90;
         i = 1;
-        parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]))*q;
+        parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]));
+        print((new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4])).eulerAngles);
         i = 2;
         parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]));
         i = 3;
@@ -209,6 +216,7 @@ public class PlayHandPoseFromFile : MonoBehaviour {
             }
             textures[i].Apply();
             pressImg[i].texture = textures[i];
+            pressMesh[i].material.mainTexture = textures[i];
         }
     }
 
