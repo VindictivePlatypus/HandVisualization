@@ -43,7 +43,11 @@ public class MouseOrbitInfiniteRotateZoom : MonoBehaviour
     void LateUpdate()
     {
 
-
+        if (target)
+        {
+            transform.position = target.position + (transform.position - target.position).normalized * distance;
+            transform.LookAt(target);
+        }
 
         // only update if the mousebutton is held down
 
@@ -74,7 +78,6 @@ public class MouseOrbitInfiniteRotateZoom : MonoBehaviour
             x += Input.GetAxis("Mouse X") * xSpeed;
 
             y -= Input.GetAxis("Mouse Y") * ySpeed;
-
 
 
             // when mouse moves left and right we actually rotate around local y axis	

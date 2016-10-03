@@ -10,6 +10,7 @@ public class PlayHandPoseFromFile : MonoBehaviour {
     private string folderPath;
 
     public List<Transform> parts;
+    public Transform forearm;
     
     public Slider slide;
 
@@ -17,10 +18,12 @@ public class PlayHandPoseFromFile : MonoBehaviour {
     public List<MeshRenderer> pressMesh;
     public Button playPauseButton;
 
-    private string filePathPose, filePathPressure;
-    private float[][] poses, pressures;
+    private string filePathPose, filePathPressure, filePathMocap;
+    private float[][] poses, pressures, mocap;
     private int idx, maxIdx;
     private float maxPressure;
+
+    private float initX, initY, initZ;
 
     private Color orange = new Color(1, 0.65f, 0);
 
@@ -117,25 +120,35 @@ public class PlayHandPoseFromFile : MonoBehaviour {
     {
         filePathPose = folderPath + "\\shapehand.dat";
         filePathPressure = folderPath + "\\tekscan.dat";
+        filePathMocap = folderPath + "\\mocap.dat";
         var linesPose = File.ReadAllLines(filePathPose);
         var linesPressure = File.ReadAllLines(filePathPressure);
+        var linesMocap = File.ReadAllLines(filePathMocap);
         poses = new float[linesPose.Length][];
         pressures = new float[linesPressure.Length][];
+        mocap = new float[linesMocap.Length][];
         for (int i = 0; i < linesPressure.Length; ++i)
         {
             poses[i] = new float[64];
             pressures[i] = new float[725];
+            mocap[i] = new float[7];
             var data1 = linesPose[i].Split(' ');
             var data2 = linesPressure[i].Split(' ');
+            var data3 = linesMocap[i].Split(' ');
             for (int j = 0; j < 64; ++j)
                 poses[i][j] = Convert.ToSingle(data1[j]);
             for (int j = 0; j < 725; ++j)
                 pressures[i][j] = Convert.ToSingle(data2[j]);
+            for (int j = 0; j < 7; ++j)
+                mocap[i][j] = Convert.ToSingle(data3[j]);
         }
         maxIdx = linesPressure.Length;
         slide.maxValue = maxIdx-1;
         float[] t = pressures.SelectMany(x => x).ToArray();
         maxPressure = t.Max();
+        initX = mocap[0][0];
+        initY = mocap[0][1];
+        initZ = mocap[0][2];
     }
 
     void UpdatePose()
@@ -144,6 +157,7 @@ public class PlayHandPoseFromFile : MonoBehaviour {
         {
             SetPose();
             SetPressure();
+            SetMocap();
             idx++;
             slide.value = idx;
         }
@@ -185,16 +199,23 @@ public class PlayHandPoseFromFile : MonoBehaviour {
         Quaternion qx = Quaternion.AngleAxis(180f, new Vector3(1, 0, 0));
         Quaternion qy = Quaternion.AngleAxis(180f, new Vector3(0, 1, 0));
         Quaternion qz = Quaternion.AngleAxis(180f, new Vector3(0, 0, 1));
-        Quaternion qx90 = Quaternion.AngleAxis(-90f, new Vector3(1, 0, 0));
-        Quaternion qy90 = Quaternion.AngleAxis(-90f, new Vector3(0, 1, 0));
         Quaternion qz90 = Quaternion.AngleAxis(90f, new Vector3(0, 0, 1));
         int i = 0;
-        parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 0], poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3]))*qx90*qy90;
+        parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 0], poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3]))
+            * Quaternion.AngleAxis(-90f, new Vector3(1, 0, 0))
+            * Quaternion.AngleAxis(-90f, new Vector3(0, 1, 0));
         i = 1;
-        parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]));
-        print((new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4])).eulerAngles);
+        Quaternion q = (new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]))
+            * Quaternion.AngleAxis(180f, new Vector3(0, 1, 0))
+            * Quaternion.AngleAxis(45f, new Vector3(1, 0, 0))
+            * Quaternion.AngleAxis(180f, new Vector3(1, 0, 0));
+        q.x = -q.x;
+        q.z = -q.z;
+        parts[i].localRotation = q;
+        //print((new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4])).eulerAngles);
         i = 2;
-        parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]));
+        parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], -poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]))
+            * Quaternion.AngleAxis(-90f, new Vector3(0, 1, 0));
         i = 3;
         parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], -poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]));
         for (i =4; i < 16; i++)
@@ -220,11 +241,19 @@ public class PlayHandPoseFromFile : MonoBehaviour {
         }
     }
 
+    public void SetMocap()
+    {
+        forearm.localPosition = new Vector3(initX - mocap[idx][0], initY - mocap[idx][1], initZ - mocap[idx][2]);
+        forearm.localRotation = (new Quaternion(mocap[idx][3], mocap[idx][4], mocap[idx][5], mocap[idx][6]))
+            * Quaternion.AngleAxis(-90f, new Vector3(1, 0, 0));
+    }
+
     public void SliderChanged(int i)
     {
         idx = i;
         SetPose();
         SetPressure();
+        SetMocap();
     }
 
     private Color GetColor(float w)
