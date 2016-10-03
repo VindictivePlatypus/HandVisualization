@@ -8,6 +8,8 @@ using UnityEngine.UI;
 
 public class PlayHandPoseFromFile : MonoBehaviour {
     private string folderPath;
+    
+    public bool usingPrediction = false;
 
     public List<Transform> parts;
     public Transform forearm;
@@ -18,8 +20,8 @@ public class PlayHandPoseFromFile : MonoBehaviour {
     public List<MeshRenderer> pressMesh;
     public Button playPauseButton;
 
-    private string filePathPose, filePathPressure, filePathMocap;
-    private float[][] poses, pressures, mocap;
+    private string filePathPose, filePathPressure, filePathMocap, filePathPrediction;
+    private float[][] actualPose, pressures, mocap, prediction;
     private int idx, maxIdx;
     private float maxPressure;
 
@@ -121,22 +123,29 @@ public class PlayHandPoseFromFile : MonoBehaviour {
         filePathPose = folderPath + "\\shapehand.dat";
         filePathPressure = folderPath + "\\tekscan.dat";
         filePathMocap = folderPath + "\\mocap.dat";
+        filePathPrediction = folderPath + "\\prediction.txt";
         var linesPose = File.ReadAllLines(filePathPose);
         var linesPressure = File.ReadAllLines(filePathPressure);
         var linesMocap = File.ReadAllLines(filePathMocap);
-        poses = new float[linesPose.Length][];
+        var linesPrediction = File.ReadAllLines(filePathPrediction);
+        actualPose = new float[linesPose.Length][];
         pressures = new float[linesPressure.Length][];
         mocap = new float[linesMocap.Length][];
+        prediction = new float[linesPrediction.Length][];
         for (int i = 0; i < linesPressure.Length; ++i)
         {
-            poses[i] = new float[64];
+            actualPose[i] = new float[64];
             pressures[i] = new float[725];
             mocap[i] = new float[7];
+            prediction[i] = new float[64];
             var data1 = linesPose[i].Split(' ');
             var data2 = linesPressure[i].Split(' ');
             var data3 = linesMocap[i].Split(' ');
-            for (int j = 0; j < 64; ++j)
-                poses[i][j] = Convert.ToSingle(data1[j]);
+            var data4 = linesPrediction[i].Split(' ');
+            for (int j = 0; j < 64; ++j) {
+                actualPose[i][j] = Convert.ToSingle(data1[j]);
+                prediction[i][j] = Convert.ToSingle(data4[j]);
+            }
             for (int j = 0; j < 725; ++j)
                 pressures[i][j] = Convert.ToSingle(data2[j]);
             for (int j = 0; j < 7; ++j)
@@ -155,7 +164,10 @@ public class PlayHandPoseFromFile : MonoBehaviour {
     {
         if (idx < maxIdx)
         {
-            SetPose();
+            if (usingPrediction)
+                SetPose(prediction);
+            else
+                SetPose(actualPose);
             SetPressure();
             SetMocap();
             idx++;
@@ -177,25 +189,8 @@ public class PlayHandPoseFromFile : MonoBehaviour {
         isPLaying = !isPLaying;
     }
 
-    public void SetPose()
+    public void SetPose(float[][] poses)
     {
-        /*
-        //Muthakuckin thumb
-        parts[1].localRotation = new Quaternion(poses[idx][1 * 4 + 2], poses[idx][1 * 4 + 3], poses[idx][1 * 4 + 1], poses[idx][1 * 4]);
-        parts[2].localRotation = new Quaternion(poses[idx][2 * 4 + 2], poses[idx][2 * 4 + 1], poses[idx][2 * 4 + 3], poses[idx][2 * 4]) * q;
-        parts[3].localRotation = new Quaternion(poses[idx][3 * 4 + 1], poses[idx][3 * 4 + 2], poses[idx][3 * 4 + 3], poses[idx][3 * 4]);
-
-        foreach (int i in indexDesJointsSympas)
-        {
-            parts[i].localRotation = new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], -poses[idx][i * 4 + 3], poses[idx][i * 4]);
-        }
-        
-        foreach (int i in indexDesJointsChiantsY)
-        {
-            parts[i].localRotation = new Quaternion(-poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]) * q;
-        }
-        */
-        //this is a test of another hand model
         Quaternion qx = Quaternion.AngleAxis(180f, new Vector3(1, 0, 0));
         Quaternion qy = Quaternion.AngleAxis(180f, new Vector3(0, 1, 0));
         Quaternion qz = Quaternion.AngleAxis(180f, new Vector3(0, 0, 1));
@@ -212,7 +207,6 @@ public class PlayHandPoseFromFile : MonoBehaviour {
         q.x = -q.x;
         q.z = -q.z;
         parts[i].localRotation = q;
-        //print((new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4])).eulerAngles);
         i = 2;
         parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], -poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]))
             * Quaternion.AngleAxis(-90f, new Vector3(0, 1, 0));
@@ -251,7 +245,10 @@ public class PlayHandPoseFromFile : MonoBehaviour {
     public void SliderChanged(int i)
     {
         idx = i;
-        SetPose();
+        if (usingPrediction)
+            SetPose(prediction);
+        else
+            SetPose(actualPose);
         SetPressure();
         SetMocap();
     }
