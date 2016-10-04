@@ -5,6 +5,7 @@ using System.Linq;
 using System;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using System.Diagnostics;
 
 public class PlayHandPoseFromFile : MonoBehaviour {
     private string folderPath;
@@ -29,7 +30,6 @@ public class PlayHandPoseFromFile : MonoBehaviour {
 
     private Color orange = new Color(1, 0.65f, 0);
 
-    private int[] indexDesJointsSympas= new int[] { 0, 5, 6, 8, 9, 11, 12, 14, 15 }, indexDesJointsChiantsY = new int[] { 4, 7, 10, 13 };
     private int[][] indexPressureImages = new int[][]
     {
         new int[] { 522,523,524,525,547,548,549,550,572,573,574,575 },
@@ -124,28 +124,26 @@ public class PlayHandPoseFromFile : MonoBehaviour {
         filePathPressure = folderPath + "\\tekscan.dat";
         filePathMocap = folderPath + "\\mocap.dat";
         filePathPrediction = folderPath + "\\prediction.txt";
+        if (!File.Exists(filePathPrediction))
+            StartCoroutine(PythonExe());
+        else
+            LoadPredictions();
         var linesPose = File.ReadAllLines(filePathPose);
         var linesPressure = File.ReadAllLines(filePathPressure);
         var linesMocap = File.ReadAllLines(filePathMocap);
-        var linesPrediction = File.ReadAllLines(filePathPrediction);
         actualPose = new float[linesPose.Length][];
         pressures = new float[linesPressure.Length][];
         mocap = new float[linesMocap.Length][];
-        prediction = new float[linesPrediction.Length][];
         for (int i = 0; i < linesPressure.Length; ++i)
         {
             actualPose[i] = new float[64];
             pressures[i] = new float[725];
             mocap[i] = new float[7];
-            prediction[i] = new float[64];
             var data1 = linesPose[i].Split(' ');
             var data2 = linesPressure[i].Split(' ');
             var data3 = linesMocap[i].Split(' ');
-            var data4 = linesPrediction[i].Split(' ');
-            for (int j = 0; j < 64; ++j) {
+            for (int j = 0; j < 64; ++j)
                 actualPose[i][j] = Convert.ToSingle(data1[j]);
-                prediction[i][j] = Convert.ToSingle(data4[j]);
-            }
             for (int j = 0; j < 725; ++j)
                 pressures[i][j] = Convert.ToSingle(data2[j]);
             for (int j = 0; j < 7; ++j)
@@ -158,6 +156,20 @@ public class PlayHandPoseFromFile : MonoBehaviour {
         initX = mocap[0][0];
         initY = mocap[0][1];
         initZ = mocap[0][2];
+    }
+
+    void LoadPredictions()
+    {
+        StopAllCoroutines();
+        var linesPrediction = File.ReadAllLines(filePathPrediction);
+        prediction = new float[linesPrediction.Length][];
+        for (int i = 0; i < linesPrediction.Length; ++i)
+        {
+            prediction[i] = new float[64];
+            var data4 = linesPrediction[i].Split(' ');
+            for (int j = 0; j < 64; ++j)
+                prediction[i][j] = Convert.ToSingle(data4[j]);
+        }
     }
 
     void UpdatePose()
@@ -191,10 +203,6 @@ public class PlayHandPoseFromFile : MonoBehaviour {
 
     public void SetPose(float[][] poses)
     {
-        Quaternion qx = Quaternion.AngleAxis(180f, new Vector3(1, 0, 0));
-        Quaternion qy = Quaternion.AngleAxis(180f, new Vector3(0, 1, 0));
-        Quaternion qz = Quaternion.AngleAxis(180f, new Vector3(0, 0, 1));
-        Quaternion qz90 = Quaternion.AngleAxis(90f, new Vector3(0, 0, 1));
         int i = 0;
         parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 0], poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3]))
             * Quaternion.AngleAxis(-90f, new Vector3(1, 0, 0))
@@ -262,5 +270,33 @@ public class PlayHandPoseFromFile : MonoBehaviour {
         else return Color.Lerp(orange, Color.red, Mathf.InverseLerp(3f/4f, 1f, v));
     }
 
+    public void TogglePrediction()
+    {
+        usingPrediction = !usingPrediction;
+        if (usingPrediction)
+            SetPose(prediction);
+        else
+            SetPose(actualPose);
+    }
 
+    IEnumerator PythonExe()
+    {
+        yield return null;
+        Process p = new Process();
+        p.StartInfo.Arguments = "python C:\\Lasagne\\code\\testNewData.py" + " " + folderPath;
+        p.StartInfo.FileName = "C:\\Lasagne\\WinPython\\scripts\\cmd2.bat";
+        p.StartInfo.WorkingDirectory = "C:\\Lasagne\\code";
+        p.StartInfo.UseShellExecute = false;
+        p.StartInfo.RedirectStandardOutput = true;
+        p.Start();
+        while (!p.StandardOutput.EndOfStream)
+        {
+            string line = p.StandardOutput.ReadLine();
+            if (line == "Done")
+            {
+                LoadPredictions();
+            }
+        }
+
+    }
 }
