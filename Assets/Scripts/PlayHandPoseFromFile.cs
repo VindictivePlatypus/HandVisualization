@@ -11,6 +11,10 @@ public class PlayHandPoseFromFile : MonoBehaviour {
     private string folderPath;
     
     public bool usingPrediction = false;
+    [Range(-180f, 180f)]
+    public float thumbAngleOffsetX = 0f;
+    [Range(-180f, 180f)]
+    public float thumbAngleOffsetY = 0f;
 
     public List<Transform> parts;
     public Transform forearm;
@@ -170,6 +174,10 @@ public class PlayHandPoseFromFile : MonoBehaviour {
             for (int j = 0; j < 64; ++j)
                 prediction[i][j] = Convert.ToSingle(data4[j]);
         }
+        if (usingPrediction)
+        {
+            SetPose(prediction);
+        }
     }
 
     void UpdatePose()
@@ -182,9 +190,33 @@ public class PlayHandPoseFromFile : MonoBehaviour {
                 SetPose(actualPose);
             SetPressure();
             SetMocap();
-            idx++;
+            if (idx == maxIdx - 1)
+            {
+                CancelInvoke("UpdatePose");
+                playPauseButton.GetComponentInChildren<Text>().text = "Play";
+                isPLaying = false;
+            } else
+            {
+                idx++;
+            }
+            
             slide.value = idx;
+        } else
+        {
+            CancelInvoke("UpdatePose");
+            playPauseButton.GetComponentInChildren<Text>().text = "Play";
+            isPLaying = false;
         }
+    }
+
+    public void SetEverything()
+    {
+        if (usingPrediction)
+            SetPose(prediction);
+        else
+            SetPose(actualPose);
+        SetPressure();
+        SetMocap();
     }
 
     public void PlayPausePose()
@@ -193,7 +225,7 @@ public class PlayHandPoseFromFile : MonoBehaviour {
         {
             CancelInvoke("UpdatePose");
             playPauseButton.GetComponentInChildren<Text>().text = "Play";
-        } else
+        } else if (idx < maxIdx)
         {
             InvokeRepeating("UpdatePose", 0, .03f);
             playPauseButton.GetComponentInChildren<Text>().text = "Pause";
@@ -214,7 +246,7 @@ public class PlayHandPoseFromFile : MonoBehaviour {
             * Quaternion.AngleAxis(180f, new Vector3(1, 0, 0));
         q.x = -q.x;
         q.z = -q.z;
-        parts[i].localRotation = q;
+        parts[i].localRotation = q * Quaternion.AngleAxis(thumbAngleOffsetX, new Vector3(0, 1, 0)) * Quaternion.AngleAxis(thumbAngleOffsetY, new Vector3(1, 0, 0));
         i = 2;
         parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], -poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]))
             * Quaternion.AngleAxis(-90f, new Vector3(0, 1, 0));
