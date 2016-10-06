@@ -5,7 +5,7 @@ using System.Collections;
 public class MouseOrbitInfiniteRotateZoom : MonoBehaviour
 {
 
-    public Transform target;
+    public Transform target1, target2;
     public float xSpeed = 12.0f;
     public float ySpeed = 12.0f;
     public float scrollSpeed = 10.0f;
@@ -26,13 +26,14 @@ public class MouseOrbitInfiniteRotateZoom : MonoBehaviour
 
     float y = 0.0f;
 
+    private Transform target;
 
 
     // Use this for initialization
 
     void Start()
     {
-
+        target = target1;
         Vector3 angles = transform.eulerAngles;
 
         x = angles.y;
@@ -151,5 +152,16 @@ public class MouseOrbitInfiniteRotateZoom : MonoBehaviour
 
         return dist;
 
+    }
+
+    public void SwitchTarget()
+    {
+        if (target.Equals(target1))
+        {
+            target = target2;
+        } else
+        {
+            target = target1;
+        }
     }
 }

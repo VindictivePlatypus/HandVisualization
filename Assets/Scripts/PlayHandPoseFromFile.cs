@@ -8,6 +8,7 @@ using UnityEngine.UI;
 using System.Diagnostics;
 
 public class PlayHandPoseFromFile : MonoBehaviour {
+    private int internalIdx = 0;
     private string folderPath;
     
     public bool usingPrediction = false;
@@ -182,30 +183,48 @@ public class PlayHandPoseFromFile : MonoBehaviour {
 
     void UpdatePose()
     {
-        if (idx < maxIdx)
+        if (idx < maxIdx-1)
         {
-            if (usingPrediction)
-                SetPose(prediction);
-            else
-                SetPose(actualPose);
-            SetPressure();
-            SetMocap();
-            if (idx == maxIdx - 1)
+            switch (internalIdx)
             {
-                CancelInvoke("UpdatePose");
-                playPauseButton.GetComponentInChildren<Text>().text = "Play";
-                isPLaying = false;
-            } else
-            {
-                idx++;
+                case 0:
+                    if (usingPrediction)
+                        SetPose(prediction);
+                    else
+                        SetPose(actualPose);
+                    SetPressure();
+                    SetMocap();
+                    slide.value = idx;
+                    internalIdx++;
+                    break;
+                case 1:
+                    if (usingPrediction)
+                        SetPose(prediction,.3f);
+                    else
+                        SetPose(actualPose,.3f);
+                    internalIdx++;
+                    break;
+                default:
+                    if (usingPrediction)
+                        SetPose(prediction,.6f);
+                    else
+                        SetPose(actualPose,.6f);
+                    internalIdx = 0;
+                    idx++;
+                    break;
             }
             
-            slide.value = idx;
-        } else
-        {
+        } else {
             CancelInvoke("UpdatePose");
             playPauseButton.GetComponentInChildren<Text>().text = "Play";
             isPLaying = false;
+            idx--;
+            if (usingPrediction)
+                SetPose(prediction,1f);
+            else
+                SetPose(actualPose, 1f);
+            idx++;
+            slide.value = idx;
         }
     }
 
@@ -227,34 +246,56 @@ public class PlayHandPoseFromFile : MonoBehaviour {
             playPauseButton.GetComponentInChildren<Text>().text = "Play";
         } else if (idx < maxIdx)
         {
-            InvokeRepeating("UpdatePose", 0, .03f);
+            InvokeRepeating("UpdatePose", 0, .02f);
             playPauseButton.GetComponentInChildren<Text>().text = "Pause";
         }
         isPLaying = !isPLaying;
     }
 
-    public void SetPose(float[][] poses)
+    public void SetPose(float[][] poses, float t = 0f)
     {
         int i = 0;
-        parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 0], poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3]))
+        parts[i].localRotation = Quaternion.Slerp(
+            (new Quaternion(poses[idx][i * 4 + 0], poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3]))
             * Quaternion.AngleAxis(-90f, new Vector3(1, 0, 0))
-            * Quaternion.AngleAxis(-90f, new Vector3(0, 1, 0));
+            * Quaternion.AngleAxis(-90f, new Vector3(0, 1, 0)),
+            (new Quaternion(poses[idx+1][i * 4 + 0], poses[idx+1][i * 4 + 1], poses[idx+1][i * 4 + 2], poses[idx+1][i * 4 + 3]))
+            * Quaternion.AngleAxis(-90f, new Vector3(1, 0, 0))
+            * Quaternion.AngleAxis(-90f, new Vector3(0, 1, 0)),
+            t);
         i = 1;
         Quaternion q = (new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]))
             * Quaternion.AngleAxis(180f, new Vector3(0, 1, 0))
             * Quaternion.AngleAxis(45f, new Vector3(1, 0, 0))
             * Quaternion.AngleAxis(180f, new Vector3(1, 0, 0));
+        Quaternion q1 = (new Quaternion(poses[idx+1][i * 4 + 1], poses[idx+1][i * 4 + 2], poses[idx+1][i * 4 + 3], poses[idx+1][i * 4]))
+            * Quaternion.AngleAxis(180f, new Vector3(0, 1, 0))
+            * Quaternion.AngleAxis(45f, new Vector3(1, 0, 0))
+            * Quaternion.AngleAxis(180f, new Vector3(1, 0, 0));
         q.x = -q.x;
         q.z = -q.z;
-        parts[i].localRotation = q * Quaternion.AngleAxis(thumbAngleOffsetX, new Vector3(0, 1, 0)) * Quaternion.AngleAxis(thumbAngleOffsetY, new Vector3(1, 0, 0));
+        q1.x = -q1.x;
+        q1.z = -q1.z;
+        parts[i].localRotation = Quaternion.Slerp(q, q1, t) * Quaternion.AngleAxis(thumbAngleOffsetX, new Vector3(0, 1, 0)) * Quaternion.AngleAxis(thumbAngleOffsetY, new Vector3(1, 0, 0));
         i = 2;
-        parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], -poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]))
-            * Quaternion.AngleAxis(-90f, new Vector3(0, 1, 0));
+        parts[i].localRotation = Quaternion.Slerp(
+            (new Quaternion(poses[idx][i * 4 + 1], -poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]))
+            * Quaternion.AngleAxis(-90f, new Vector3(0, 1, 0)),
+
+            (new Quaternion(poses[idx+1][i * 4 + 1], -poses[idx+1][i * 4 + 2], poses[idx+1][i * 4 + 3], poses[idx+1][i * 4]))
+            * Quaternion.AngleAxis(-90f, new Vector3(0, 1, 0)),
+            t);
         i = 3;
-        parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], -poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4]));
+        parts[i].localRotation = Quaternion.Slerp(
+            (new Quaternion(poses[idx][i * 4 + 1], -poses[idx][i * 4 + 2], poses[idx][i * 4 + 3], poses[idx][i * 4])),
+            (new Quaternion(poses[idx+1][i * 4 + 1], -poses[idx+1][i * 4 + 2], poses[idx+1][i * 4 + 3], poses[idx+1][i * 4])),
+            t);
         for (i =4; i < 16; i++)
         {
-            parts[i].localRotation = (new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], -poses[idx][i * 4 + 3], poses[idx][i * 4]));
+            parts[i].localRotation = Quaternion.Slerp(
+                (new Quaternion(poses[idx][i * 4 + 1], poses[idx][i * 4 + 2], -poses[idx][i * 4 + 3], poses[idx][i * 4])),
+                (new Quaternion(poses[idx+1][i * 4 + 1], poses[idx+1][i * 4 + 2], -poses[idx+1][i * 4 + 3], poses[idx+1][i * 4])),
+                t);
         }
     }
 
@@ -285,10 +326,23 @@ public class PlayHandPoseFromFile : MonoBehaviour {
     public void SliderChanged(int i)
     {
         idx = i;
-        if (usingPrediction)
-            SetPose(prediction);
-        else
-            SetPose(actualPose);
+        float t = 0f;
+        if (idx == maxIdx - 1)
+        {
+            idx--;
+            if (usingPrediction)
+                SetPose(prediction, 1f);
+            else
+                SetPose(actualPose, 1f);
+        } else
+        {
+            if (usingPrediction)
+                SetPose(prediction);
+            else
+                SetPose(actualPose);
+        }
+
+        
         SetPressure();
         SetMocap();
     }
