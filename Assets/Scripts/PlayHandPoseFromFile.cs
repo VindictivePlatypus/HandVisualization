@@ -326,7 +326,6 @@ public class PlayHandPoseFromFile : MonoBehaviour {
     public void SliderChanged(int i)
     {
         idx = i;
-        float t = 0f;
         if (idx == maxIdx - 1)
         {
             idx--;
