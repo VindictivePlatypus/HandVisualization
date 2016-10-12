@@ -318,9 +318,11 @@ public class PlayHandPoseFromFile : MonoBehaviour {
 
     public void SetMocap()
     {
+        /*
         forearm.localPosition = new Vector3(initX - mocap[idx][0], initY - mocap[idx][1], initZ - mocap[idx][2]);
         forearm.localRotation = (new Quaternion(mocap[idx][3], mocap[idx][4], mocap[idx][5], mocap[idx][6]))
             * Quaternion.AngleAxis(-90f, new Vector3(1, 0, 0));
+        */
     }
 
     public void SliderChanged(int i)

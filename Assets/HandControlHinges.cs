@@ -5,6 +5,9 @@ using System.Collections.Generic;
 public class HandControlHinges : MonoBehaviour {
 
     public List<GameObject> parts;
+    public List<Transform> transfTargets;
+
+    public int indexToShow = 0;
 
     private List<Transform> transf = new List<Transform>();
     private List<HingeJoint> joints = new List<HingeJoint>();
@@ -25,6 +28,7 @@ public class HandControlHinges : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+        //print(transf[indexToShow].localEulerAngles);
         if (useMotors)
             UpdateSpeed();
         else
@@ -36,33 +40,37 @@ public class HandControlHinges : MonoBehaviour {
         for (int i = 0; i < 16; i++)
         {
             Transform t = transf[i];
+            Transform target = transfTargets[i];
             HingeJoint h = joints[i];
             JointMotor m = h.motor;
-            float theta = targetAngles[i];
-            if (theta < 0)
-            {
-                theta = 180 - theta;
-            }
+            float theta = 0;
             float localAngle = 0;
             if (h.axis.Equals(new Vector3(1, 0, 0)))
             {
                 localAngle = t.localEulerAngles.x;
+                theta = target.localEulerAngles.x;
             }
             else if (h.axis.Equals(new Vector3(0, 1, 0)))
             {
                 localAngle = t.localEulerAngles.y;
+                theta = target.localEulerAngles.y;
             }
             else
             {
                 localAngle = t.localEulerAngles.z;
+                theta = target.localEulerAngles.z;
             }
-            if (localAngle - theta > .1)
+            if (localAngle > 180 && i != 1)
+                localAngle -= 360;
+            if (theta > 180 && i != 1)
+                theta -= 360;
+            float a = theta - localAngle;
+            if (Mathf.Abs(a) > .5 )
             {
-                m.targetVelocity = Mathf.Min(25, Mathf.Abs(localAngle - theta));
-            }
-            else if (localAngle - theta < -.1)
+                m.targetVelocity = a;
+            } else
             {
-                m.targetVelocity = -Mathf.Min(25, Mathf.Abs(localAngle - theta));
+                m.targetVelocity = 0;
             }
             h.motor = m;
         }
