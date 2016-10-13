@@ -8,6 +8,7 @@ public class FillDropdown : MonoBehaviour {
     
     public string dataFolder;
     public PlayHandPoseFromFile p;
+    public HandControlSlerp hcs;
     private Dropdown dd;
 
 	// Use this for initialization
@@ -28,6 +29,7 @@ public class FillDropdown : MonoBehaviour {
     {
         p.ChangeFolder(dataFolder + "\\" + dd.options[dd.value].text);
         p.ChangeFolder(dataFolder + "\\" + dd.options[dd.value].text);
+        hcs.ChangeInit();
     }
 
 }
