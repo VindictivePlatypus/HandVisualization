@@ -1,11 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 public class HandControlSlerp : MonoBehaviour {
 
     public List<Transform> parts;
     public List<Transform> transfTargets;
+    public Toggle toggle;
 
     public bool slerp = false;
     public int speed = 1;
@@ -28,7 +30,7 @@ public class HandControlSlerp : MonoBehaviour {
                 index++;
             } else
             {
-                slerp = false;
+                toggle.isOn = false;
             }
         }
 	}
@@ -48,5 +50,10 @@ public class HandControlSlerp : MonoBehaviour {
         {
             initPos[i] = parts[i].localRotation;
         }
+    }
+
+    public void ToggleSlerp()
+    {
+        slerp = !slerp;
     }
 }
