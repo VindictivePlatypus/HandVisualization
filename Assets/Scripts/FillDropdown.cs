@@ -29,7 +29,7 @@ public class FillDropdown : MonoBehaviour {
     {
         p.ChangeFolder(dataFolder + "\\" + dd.options[dd.value].text);
         p.ChangeFolder(dataFolder + "\\" + dd.options[dd.value].text);
-        hcs.ChangeInit();
+        //hcs.ChangeInit();
     }
 
 }
